@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<div class="row mt-4">
+  <div class="col-md-3">
+    <div class="card text-white bg-primary mb-3">
+      <div class="card-body">
+        <h5>Teachers</h5>
+        <p class="display-6">{{ teachers|length }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-success mb-3">
+      <div class="card-body">
+        <h5>Subjects</h5>
+        <p class="display-6">{{ subjects|length }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-warning mb-3">
+      <div class="card-body">
+        <h5>Papers</h5>
+        <p class="display-6">{{ papers|length }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+<h4 class="mt-4">Teachers List</h4>
+<table class="table table-bordered bg-white">
+  <thead class="table-dark">
+    <tr><th>Name</th><th>Username</th><th>Subjects</th></tr>
+  </thead>
+  <tbody>
+    {% for t in teachers %}
+    <tr>
+      <td>{{ t.full_name }}</td>
+      <td>{{ t.username }}</td>
+      <td>{{ t.subjects|map(attribute='name')|join(', ') or 'None' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="text-center">No teachers yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

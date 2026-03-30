@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>All Papers</h2>
+<table class="table table-bordered bg-white mt-3">
+  <thead class="table-dark">
+    <tr><th>Title</th><th>Subject</th><th>Teacher</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for paper in papers %}
+    <tr>
+      <td>{{ paper.title }}</td>
+      <td>{{ paper.subject.name }}</td>
+      <td>{{ paper.teacher.full_name }}</td>
+      <td><span class="badge bg-{{ 'success' if paper.status == 'submitted' else 'secondary' }}">{{ paper.status }}</span></td>
+      <td>{{ paper.created_at.strftime('%d-%m-%Y') }}</td>
+      <td>
+        <a href="{{ url_for('admin.download_paper', paper_id=paper.id, fmt='pdf') }}" class="btn btn-sm btn-danger">PDF</a>
+        <a href="{{ url_for('admin.download_paper', paper_id=paper.id, fmt='docx') }}" class="btn btn-sm btn-primary">DOCX</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="text-center">No papers yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

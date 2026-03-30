@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Paper Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark px-3 d-flex justify-content-between">
+    <span class="navbar-brand">Question Paper Portal</span>
+    {% if session.user_id %}
+    <div>
+        <span class="text-light me-3">{{ session.full_name }} ({{ session.role }})</span>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light">Logout</a>
+    </div>
+    {% endif %}
+</nav>
+<div class="container-fluid">
+  <div class="row">
+    {% if session.user_id %}
+    <div class="col-md-2 bg-secondary min-vh-100 pt-3">
+      {% if session.role == 'admin' %}
+        <a href="{{ url_for('admin.dashboard') }}" class="d-block text-white p-2">Dashboard</a>
+        <a href="{{ url_for('admin.create_teacher') }}" class="d-block text-white p-2">Add Teacher</a>
+        <a href="{{ url_for('admin.view_papers') }}" class="d-block text-white p-2">View Papers</a>
+      {% else %}
+        <a href="{{ url_for('teacher.dashboard') }}" class="d-block text-white p-2">Dashboard</a>
+        <a href="{{ url_for('teacher.question_bank') }}" class="d-block text-white p-2">Question Bank</a>
+        <a href="{{ url_for('teacher.dashboard') }}" class="d-block text-white p-2">New Paper</a>
+      {% endif %}
+    </div>
+    <div class="col-md-10 p-4">
+    {% else %}
+    <div class="col-12 p-4">
+    {% endif %}
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}{% for msg in messages %}
+            <div class="alert alert-warning alert-dismissible fade show">{{ msg }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}{% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

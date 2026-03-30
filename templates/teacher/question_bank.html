@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Question Bank</h2>
+<div class="card shadow mb-4" style="max-width:600px">
+  <div class="card-body">
+    <h5>Add New Question</h5>
+    <form method="POST" action="/teacher/questions/add">
+      <div class="mb-2">
+        <label class="form-label">Subject</label>
+        <select name="subject_id" class="form-select" required>
+          {% for s in subjects %}
+          <option value="{{ s.id }}">{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Question Text</label>
+        <textarea name="question_text" class="form-control" rows="3" required></textarea>
+      </div>
+      <div class="row">
+        <div class="col">
+          <label class="form-label">Marks</label>
+          <input type="number" name="marks" class="form-control" value="1" min="1" required>
+        </div>
+        <div class="col">
+          <label class="form-label">Type</label>
+          <select name="q_type" class="form-select">
+            <option value="short">Short</option>
+            <option value="long">Long</option>
+            <option value="mcq">MCQ</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary mt-3">Add Question</button>
+    </form>
+  </div>
+</div>
+<h4>Existing Questions</h4>
+<table class="table table-bordered bg-white">
+  <thead class="table-dark">
+    <tr><th>Subject</th><th>Question</th><th>Marks</th><th>Type</th></tr>
+  </thead>
+  <tbody>
+    {% for q in questions %}
+    <tr>
+      <td>{{ q.subject.name }}</td>
+      <td>{{ q.question_text }}</td>
+      <td>{{ q.marks }}</td>
+      <td>{{ q.q_type }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="text-center">No questions yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
