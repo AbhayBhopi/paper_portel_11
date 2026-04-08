@@ -38,7 +38,7 @@
 <h4>Existing Questions</h4>
 <table class="table table-bordered bg-white">
   <thead class="table-dark">
-    <tr><th>Subject</th><th>Question</th><th>Marks</th><th>Type</th></tr>
+    <tr><th>Subject</th><th>Question</th><th>Marks</th><th>Type</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for q in questions %}
@@ -47,9 +47,14 @@
       <td>{{ q.question_text }}</td>
       <td>{{ q.marks }}</td>
       <td>{{ q.q_type }}</td>
+      <td>
+        <form action="{{ url_for('teacher.delete_question', q_id=q.id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this question?');">Delete</button>
+        </form>
+      </td>
     </tr>
     {% else %}
-    <tr><td colspan="4" class="text-center">No questions yet.</td></tr>
+    <tr><td colspan="5" class="text-center">No questions yet.</td></tr>
     {% endfor %}
   </tbody>
 </table>

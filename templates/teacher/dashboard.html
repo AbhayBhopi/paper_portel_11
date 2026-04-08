@@ -28,6 +28,13 @@
               {% endfor %}
             </select>
           </div>
+          <div class="mb-2">
+            <label class="form-label">Exam Type</label>
+            <select name="exam_type" class="form-select" required>
+              <option value="class_test">Class Test</option>
+              <option value="university">University Based</option>
+            </select>
+          </div>
           <button type="submit" class="btn btn-primary w-100">+ Create Paper</button>
         </form>
       </div>
@@ -48,6 +55,7 @@
       <td>{{ paper.created_at.strftime('%d-%m-%Y') }}</td>
       <td>
         <a href="{{ url_for('teacher.paper_builder', paper_id=paper.id) }}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{{ url_for('teacher.delete_paper', paper_id=paper.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this paper?');">Delete</a>
       </td>
     </tr>
     {% else %}

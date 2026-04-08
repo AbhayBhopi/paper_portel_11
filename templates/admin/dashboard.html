@@ -30,14 +30,19 @@
 <h4 class="mt-4">Teachers List</h4>
 <table class="table table-bordered bg-white">
   <thead class="table-dark">
-    <tr><th>Name</th><th>Username</th><th>Subjects</th></tr>
+    <tr><th>Name</th><th>Username</th><th>Department</th><th>Subjects</th><th>Actions</th></tr>
   </thead>
   <tbody>
     {% for t in teachers %}
     <tr>
       <td>{{ t.full_name }}</td>
       <td>{{ t.username }}</td>
-      <td>{{ t.subjects|map(attribute='name')|join(', ') or 'None' }}</td>
+      <td><span class="badge bg-secondary">{{ t.department or 'N/A' }}</span></td>
+      <td>{{ t.subjects|map(attribute='name')|join(', ')|truncate(40) or 'None' }}</td>
+      <td>
+        <a href="{{ url_for('admin.edit_teacher', teacher_id=t.id) }}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{{ url_for('admin.delete_teacher', teacher_id=t.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to completely remove this teacher? All their papers will also be systematically deleted.');">Remove</a>
+      </td>
     </tr>
     {% else %}
     <tr><td colspan="3" class="text-center">No teachers yet.</td></tr>

@@ -1,99 +1,545 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>{{ 'Edit Paper' if paper else 'New Paper' }}</h2>
-<div class="row">
-  <div class="col-md-5">
-    <div class="card shadow mb-3">
-      <div class="card-body">
-        <h5>Paper Details</h5>
-        <form method="POST" action="{{ url_for('teacher.paper_builder', paper_id=paper.id) if paper else url_for('teacher.create_paper') }}">
-          <div class="mb-2">
-            <label class="form-label">Title</label>
-            <input type="text" name="title" class="form-control" value="{{ paper.title if paper else '' }}" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Subject</label>
-            <select name="subject_id" class="form-select" required>
-              {% for s in subjects %}
-              <option value="{{ s.id }}" {{ 'selected' if paper and paper.subject_id == s.id }}>{{ s.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <button type="submit" class="btn btn-success w-100">Save Paper</button>
-        </form>
-      </div>
-    </div>
-    {% if paper %}
-    <div class="card shadow">
-      <div class="card-body">
-        <h5>Add Question from Bank</h5>
-        <form method="POST" action="{{ url_for('teacher.add_question_to_paper', paper_id=paper.id) }}">
-          <select name="question_id" class="form-select mb-2">
-            {% for q in all_questions %}
-            <option value="{{ q.id }}">[{{ q.q_type }}] {{ q.question_text[:60] }}</option>
-            {% else %}
-            <option disabled>No questions in bank yet</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn btn-primary w-100">Add to Paper</button>
-        </form>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-  <div class="col-md-7">
-    {% if paper %}
-    <div class="card shadow mb-3">
-      <div class="card-body">
-        <h5>Add Custom Question</h5>
-        <form method="POST" action="{{ url_for('teacher.add_custom_question', paper_id=paper.id) }}">
-          <div class="mb-2">
-            <label class="form-label">Question</label>
-            <textarea name="question_text" class="form-control" rows="2" required></textarea>
-          </div>
-          <div class="row">
-            <div class="col">
-              <label class="form-label">Marks</label>
-              <input type="number" name="marks" class="form-control" value="1" min="1">
-            </div>
-            <div class="col">
-              <label class="form-label">Type</label>
-              <select name="q_type" class="form-select">
-                <option value="short">Short</option>
-                <option value="long">Long</option>
-                <option value="mcq">MCQ</option>
-              </select>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-success mt-3 w-100">+ Add Question</button>
-        </form>
-      </div>
-    </div>
+<form method="POST"
+    action="{{ url_for('teacher.paper_builder', paper_id=paper.id) if paper else url_for('teacher.create_paper') }}">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow mb-3 position-sticky" style="top: 20px;">
+                <div class="card-body">
+                    <h5>Paper Details</h5>
+                    <div class="mb-2">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" value="{{ paper.title if paper else '' }}"
+                            required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Subject</label>
+                        <select name="subject_id" class="form-select" required>
+                            {% for s in subjects %}
+                            <option value="{{ s.id }}" {{ 'selected' if paper and paper.subject_id==s.id }}>{{ s.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Exam Type</label>
+                        <select name="exam_type" class="form-select" required>
+                            <option value="class_test" {{ 'selected' if paper and paper.exam_type=='class_test' }}>Class
+                                Test (Midsem)</option>
+                            <option value="university" {{ 'selected' if paper and paper.exam_type=='university' }}>
+                                University Based (Endsem)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Save Paper</button>
 
-    <h5>Questions in this Paper</h5>
-    <table class="table table-bordered bg-white">
-      <thead class="table-dark">
-        <tr><th>#</th><th>Question</th><th>Marks</th><th>Remove</th></tr>
-      </thead>
-      <tbody>
-        {% for pq in paper.questions %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td>{{ pq.question.question_text }}</td>
-          <td>{{ pq.question.marks }}</td>
-          <td><a href="{{ url_for('teacher.remove_question_from_paper', paper_id=paper.id, pq_id=pq.id) }}" class="btn btn-sm btn-danger">X</a></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="text-center">No questions added yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% if paper.status == 'draft' %}
-    <form method="POST" action="{{ url_for('teacher.submit_paper', paper_id=paper.id) }}" class="mt-2">
-      <button type="submit" class="btn btn-success">Submit Paper to HOD</button>
-    </form>
-    {% endif %}
-    {% endif %}
-  </div>
-</div>
+                    {% if paper and paper.status == 'draft' %}
+                    <hr>
+                    <button type="button" class="btn btn-primary w-100"
+                        onclick="document.getElementById('submit-form').submit();">Submit to HOD</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            {% if paper %}
+            <h5>Live Editable Paper Preview <small class="text-muted">(Type directly into the template)</small></h5>
+            <div class="shadow-sm bg-white mx-auto mb-4 position-relative"
+                style="width: 210mm; min-height: 297mm; padding: 15mm; font-family: 'Times New Roman', Times, serif; color: black !important; box-sizing: border-box;">
+
+                <!-- The Main Container Box -->
+                <div style="border: 2px solid #000;">
+
+                    <!-- Dynamic Headers -->
+                    {% if paper.exam_type == 'university' %}
+                    <div class="text-center position-relative py-2"
+                        style="border-bottom: 1px solid #000; font-family: 'Times New Roman', Times, serif;">
+                        <h5 class="mb-1 fw-bold" style="font-size: 15px;">DR. BABASAHEB AMBEDKAR TECHNOLOGICAL
+                            UNIVERSITY, LONERE</h5>
+                        <div class="d-flex justify-content-center mb-1">
+                            <input type="text" name="header_title"
+                                value="{{ paper.header_title or 'Supplementary Summer Examination - 2024' }}"
+                                class="border-0 bg-transparent text-center fw-bold m-0 p-0"
+                                style="font-size: 14px; outline: none; width: 100%; max-width: 500px; color: inherit;">
+                        </div>
+                    </div>
+
+                    <table class="w-100"
+                        style="font-size: 14px; border-collapse: collapse; border-bottom: 1px solid #000;">
+                        <tr>
+                            <td class="py-1 px-2" style="width: 25%;"><strong>Course:</strong> B. Tech.</td>
+                            <td class="py-1 px-2 text-center" style="width: 50%;"><strong>Branch :</strong> <input
+                                    type="text" name="branch"
+                                    value="{{ paper.branch or 'Artificial Intelligence and Data Science Engineering And Allied' }}"
+                                    class="border-0 bg-transparent py-0 fw-bold border-bottom border-dark text-center"
+                                    style="outline:none; width:80%;"
+                                    placeholder="Artificial Intelligence and Data Science Engineering And Allied"></td>
+                            <td class="py-1 px-2 text-end" style="width: 25%;"><strong>Semester :</strong> <input
+                                    type="text" name="semester" value="{{ paper.semester or '' }}"
+                                    class="border-0 bg-transparent py-0 fw-bold text-center"
+                                    style="outline:none; width:50px;" placeholder="V"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="py-1 px-2"><strong>Subject Code & Name:</strong> {{
+                                paper.subject.code }} {{ paper.subject.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-2 pb-2"><strong>Max Marks:</strong> 60</td>
+                            <td class="py-1 px-2 pb-2 text-center"><strong>Date:</strong> <input type="text"
+                                    name="exam_date" value="{{ paper.exam_date or '' }}"
+                                    class="border-0 bg-transparent py-0 fw-bold text-center"
+                                    style="outline:none; width:100px;" placeholder="DD/MM/YYYY"></td>
+                            <td class="py-1 px-2 pb-2 text-end"><strong>Duration:</strong> 3 Hr.</td>
+                        </tr>
+                    </table>
+
+                    <div class="px-2 py-2" style="font-size: 13px; border-bottom: 1px solid #000; font-style: italic;">
+                        <p class="fw-bold mb-1">Instructions to the Students:</p>
+                        <ol class="mb-0 ms-0 ps-3" style="line-height: 1.4;">
+                            <li>All the questions are compulsory.</li>
+                            <li>The level of question/expected answer as per OBE or the Course Outcome (CO) on which the
+                                question is based is mentioned in ( ) in front of the question.</li>
+                            <li>Use of non-programmable scientific calculators is allowed.</li>
+                            <li>Assume suitable data wherever necessary and mention it clearly.</li>
+                        </ol>
+                    </div>
+                    {% else %}
+                    <!-- Header section -->
+                    <div class="text-center position-relative py-3" style="border-bottom: 1px solid #000;">
+                        <div class="position-absolute top-0 start-0 d-flex align-items-center justify-content-center m-2"
+                            style="width: 70px; height: 70px;">
+                            <img src="{{ url_for('static', filename='logo1.png') }}"
+                                onerror="this.style.display='none';" alt="Logo"
+                                style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div class="position-absolute top-0 end-0 d-flex align-items-center justify-content-center m-2"
+                            style="width: 70px; height: 70px;">
+                            <img src="{{ url_for('static', filename='logo2.jpg') }}"
+                                onerror="this.style.display='none';" alt="ISO/NAAC Logo"
+                                style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <h6 class="mb-1 fw-bold" style="font-size: 14px;">SHREEYASH PRATISHTHAN'S</h6>
+                        <h5 class="mb-1 fw-bold" style="font-size: 18px; color: #b71c1c;">SHREEYASH COLLEGE OF
+                            ENGINEERING & TECHNOLOGY,</h5>
+                        <h5 class="mb-1 fw-bold" style="font-size: 18px; color: #b71c1c;">CHH.SAMBHAJINAGAR</h5>
+                        <p class="mb-1" style="font-size: 13px;">Satara Parisar, Beed By-Pass Road, Chh.Sambhajinagar
+                            -431010 (M.S.)</p>
+                        <p class="mb-3 fw-bold" style="font-size: 13px;">NAAC Accredited, ISO Certified Institute</p>
+                        <div class="d-flex justify-content-center">
+                            <input type="text" name="header_title" value="{{ paper.header_title or 'MIDSEM EXAM QP' }}"
+                                class="border-0 bg-transparent text-center fw-bold text-decoration-underline m-0 p-0"
+                                style="font-size: 16px; outline: none; width: 100%; max-width: 500px; color: inherit;">
+                        </div>
+                    </div>
+
+                    <!-- Meta info section -->
+                    <table class="w-100"
+                        style="font-size: 14px; border-collapse: collapse; border-bottom: 1px solid #000;">
+                        <tr>
+                            <td class="py-1 px-2"><strong>Course:</strong> Computer Science & Engineering (DS)</td>
+                            <td class="py-1 px-2 text-end"><strong>Sem:</strong> <input type="text" name="semester"
+                                    value="{{ paper.semester or '' }}"
+                                    class="border-0 bg-transparent py-0 fw-bold border-bottom border-dark text-center"
+                                    style="outline:none; width:80px;" placeholder="______"></td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-2"><strong>Subject Name:</strong> {{ paper.subject.name }}</td>
+                            <td class="py-1 px-2 text-end"><strong>Subject Code:</strong> {{ paper.subject.code }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-2"><strong>Max Marks:</strong> 20</td>
+                            <td class="py-1 px-2 text-end"><strong>Duration:</strong> 1 Hr.</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-2 pb-2"><strong>Date:</strong> <input type="text" name="exam_date"
+                                    value="{{ paper.exam_date or '' }}"
+                                    class="border-0 bg-transparent py-0 fw-bold border-bottom border-dark text-center"
+                                    style="outline:none; width:100px;" placeholder="DD/MM/YYYY"></td>
+                            <td class="py-1 px-2 pb-2 text-end"></td>
+                        </tr>
+                    </table>
+
+                    <!-- Instructions -->
+                    <div class="px-2 py-2" style="font-size: 13px; border-bottom: 1px solid #000;">
+                        <p class="fw-bold mb-1">Instructions to the Students:</p>
+                        <ul class="list-unstyled mb-0 ms-0 ps-0" style="line-height: 1.4;">
+                            <li>[1] Use of non-programmable calculator is allowed</li>
+                            <li>[2] Draw the diagram wherever necessary</li>
+                            <li>[3] Assume suitable data wherever necessary and mention it clearly</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Questions Table -->
+                    <table class="table border-dark m-0 pb-0" style="font-size: 14px; border-color: #000;">
+                        <thead class="text-center" style="border-bottom: 1px solid #000;">
+                            <tr>
+                                <th style="width: 8%; font-weight: bold; border-right: 1px solid #000;"></th>
+                                <th style="width: 66%; font-weight: bold; border-right: 1px solid #000;"></th>
+                                <th style="width: 8%; font-weight: bold; border-right: 1px solid #000;">Level</th>
+                                <th style="width: 8%; font-weight: bold; border-right: 1px solid #000;">CO</th>
+                                <th style="width: 10%; font-weight: bold;">Mark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if paper.exam_type == 'university' %}
+                            <!-- Q.1: 12 MCQs -->
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.1</td>
+                                <td style="border-right: 1px solid #000;">Attempt following Questions</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">12 X 1</td>
+                            </tr>
+                            {% for i in range(12) %}
+                            {% set pq = paper.questions[i] %}
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{ i + 1 }}
+                                </td>
+                                <td class="p-1" style="border-right: 1px solid #000;">
+                                    <textarea name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="2"
+                                        placeholder="Write MCQ question here...">{{ pq.question.question_text }}</textarea>
+                                    <div class="row g-1 mt-1 px-1" style="font-size: 13px;">
+                                        <div class="col-6 d-flex align-items-center">
+                                            <span class="me-1 fw-bold">(A)</span> <input type="text"
+                                                name="opt_a_{{ pq.id }}" value="{{ pq.question.opt_a or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-center">
+                                            <span class="me-1 fw-bold">(B)</span> <input type="text"
+                                                name="opt_b_{{ pq.id }}" value="{{ pq.question.opt_b or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-center mt-1">
+                                            <span class="me-1 fw-bold">(C)</span> <input type="text"
+                                                name="opt_c_{{ pq.id }}" value="{{ pq.question.opt_c or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-center mt-1">
+                                            <span class="me-1 fw-bold">(D)</span> <input type="text"
+                                                name="opt_d_{{ pq.id }}" value="{{ pq.question.opt_d or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L1</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO1</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Q.2: 2 Questions -->
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.2</td>
+                                <td style="border-right: 1px solid #000;">Solve the following</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">1 X 6</td>
+                            </tr>
+                            {% set q_labels = ['(A)', '(B)', '(C)'] %}
+                            {% for i in range(2) %}
+                            {% set pq = paper.questions[i + 12] %}
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q_labels[i] }}</td>
+                                <td class="p-1" style="border-right: 1px solid #000;"><textarea
+                                        name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="3"
+                                        placeholder="Write question here...">{{ pq.question.question_text }}</textarea>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L2</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO2</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Q.3: 2 Questions -->
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.3</td>
+                                <td style="border-right: 1px solid #000;">Solve the following</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">1 X 6</td>
+                            </tr>
+                            {% for i in range(2) %}
+                            {% set pq = paper.questions[i + 14] %}
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q_labels[i] }}</td>
+                                <td class="p-1" style="border-right: 1px solid #000;"><textarea
+                                        name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="3"
+                                        placeholder="Write question here...">{{ pq.question.question_text }}</textarea>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L2</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO2</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Q.4: 3 Questions -->
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.4</td>
+                                <td style="border-right: 1px solid #000;">Solve Any Two of the following</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">2 X 6</td>
+                            </tr>
+                            {% for i in range(3) %}
+                            {% set pq = paper.questions[i + 16] %}
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q_labels[i] }}</td>
+                                <td class="p-1" style="border-right: 1px solid #000;"><textarea
+                                        name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="3"
+                                        placeholder="Write question here...">{{ pq.question.question_text }}</textarea>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L2</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO3</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Q.5: 3 Questions -->
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.5</td>
+                                <td style="border-right: 1px solid #000;">Solve Any Two of the following</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">2 X 6</td>
+                            </tr>
+                            {% for i in range(3) %}
+                            {% set pq = paper.questions[i + 19] %}
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q_labels[i] }}</td>
+                                <td class="p-1" style="border-right: 1px solid #000;"><textarea
+                                        name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="3"
+                                        placeholder="Write question here...">{{ pq.question.question_text }}</textarea>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L3</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO4</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Q.6: 3 Questions -->
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.6</td>
+                                <td style="border-right: 1px solid #000;">Solve Any Two of the following</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">2 X 6</td>
+                            </tr>
+                            {% for i in range(3) %}
+                            {% set pq = paper.questions[i + 22] %}
+                            <tr {% if not loop.last %}style="border-bottom: 1px solid #000;" {% endif %}>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q_labels[i] }}</td>
+                                <td class="p-1" style="border-right: 1px solid #000;"><textarea
+                                        name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="3"
+                                        placeholder="Write question here...">{{ pq.question.question_text }}</textarea>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L3</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO4</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            {% else %}
+                            <!-- CLASS TEST FORMAT -->
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.1</td>
+                                <td style="border-right: 1px solid #000;">Attempt following Questions</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">1 X 5</td>
+                            </tr>
+                            {% for i in range(5) %}
+                            {% set pq = paper.questions[i] %}
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{ i + 1 }}
+                                </td>
+                                <td class="p-1" style="border-right: 1px solid #000;">
+                                    <textarea name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="2"
+                                        placeholder="Write MCQ question here...">{{ pq.question.question_text }}</textarea>
+                                    <div class="row g-1 mt-1 px-1" style="font-size: 13px;">
+                                        <div class="col-6 d-flex align-items-center">
+                                            <span class="me-1 fw-bold">(A)</span> <input type="text"
+                                                name="opt_a_{{ pq.id }}" value="{{ pq.question.opt_a or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-center">
+                                            <span class="me-1 fw-bold">(B)</span> <input type="text"
+                                                name="opt_b_{{ pq.id }}" value="{{ pq.question.opt_b or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-center mt-1">
+                                            <span class="me-1 fw-bold">(C)</span> <input type="text"
+                                                name="opt_c_{{ pq.id }}" value="{{ pq.question.opt_c or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-center mt-1">
+                                            <span class="me-1 fw-bold">(D)</span> <input type="text"
+                                                name="opt_d_{{ pq.id }}" value="{{ pq.question.opt_d or '' }}"
+                                                class="form-control form-control-sm border-0 bg-transparent rounded-0 p-0 mcq-input"
+                                                placeholder="...">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L{{ 1 if i <
+                                        4 else 2 }}</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO1</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.2</td>
+                                <td style="border-right: 1px solid #000;">Solve Any Two of the following</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">2 X 5</td>
+                            </tr>
+                            {% set q2_labels = ['(A)', '(B)', '(C)'] %}
+                            {% set q2_levels = ['L1', 'L2', 'L2'] %}
+                            {% set q2_cos = ['CO1', 'CO2', 'CO2'] %}
+                            {% for i in range(3) %}
+                            {% set pq = paper.questions[i + 5] %}
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q2_labels[i] }}</td>
+                                <td class="p-1" style="border-right: 1px solid #000;"><textarea
+                                        name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="3"
+                                        placeholder="Write question here...">{{ pq.question.question_text }}</textarea>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q2_levels[i] }}</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{ q2_cos[i]
+                                    }}</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+
+                            <tr class="fw-bold" style="border-bottom: 1px solid #000;">
+                                <td class="text-center" style="border-right: 1px solid #000;">Q.3</td>
+                                <td style="border-right: 1px solid #000;">Solve Any One of the following</td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td style="border-right: 1px solid #000;"></td>
+                                <td class="text-center">1 X 5</td>
+                            </tr>
+                            {% set q3_labels = ['(A)', '(B)'] %}
+                            {% for i in range(2) %}
+                            {% set pq = paper.questions[i + 8] %}
+                            <tr {% if not loop.last %}style="border-bottom: 1px solid #000;" {% endif %}>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">{{
+                                    q3_labels[i] }}</td>
+                                <td class="p-1" style="border-right: 1px solid #000;"><textarea
+                                        name="question_text_{{ pq.id }}"
+                                        class="form-control form-control-sm border-0 bg-transparent p-0 w-100 m-0"
+                                        style="resize:none; overflow:hidden;" rows="3"
+                                        placeholder="Write question here...">{{ pq.question.question_text }}</textarea>
+                                </td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">L2</td>
+                                <td class="text-center align-middle" style="border-right: 1px solid #000;">CO2</td>
+                                <td class="text-center align-middle"></td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div> <!-- End of Outer Box -->
+
+            </div>
+            {% else %}
+            <div class="alert alert-info">Save proper paper details to generate the editable template.</div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+{% if paper and paper.status == 'draft' %}
+<form id="submit-form" method="POST" action="{{ url_for('teacher.submit_paper', paper_id=paper.id) }}"></form>
+{% endif %}
+
+<style>
+    /* Auto-resize textareas to fit content on load and input */
+    textarea.form-control {
+        border: 1px dashed transparent !important;
+        min-height: 40px;
+    }
+
+    textarea.form-control:hover,
+    textarea.form-control:focus {
+        border: 1px dashed #ccc !important;
+        background-color: #fdfdfd !important;
+        outline: none;
+        box-shadow: none;
+    }
+
+    @media print {
+        textarea.form-control {
+            border: none !important;
+            resize: none;
+            overflow: hidden;
+            background: transparent !important;
+        }
+
+        .btn,
+        hr,
+        .card:not(.shadow-sm),
+        .alert {
+            display: none !important;
+        }
+
+        .shadow-sm {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        table {
+            page-break-inside: auto;
+        }
+
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('textarea').forEach(el => {
+            el.style.height = el.scrollHeight + 'px';
+            el.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+    });
+</script>
+
 {% endblock %}

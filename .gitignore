@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.flaskenv
+
+# SQLite databases (Optional: If you want to keep your local db separate from live db)
+# portal.db
+
+# VS Code settings
+.vscode/
+
+# Uploads or temporary files (if you want them ignored)
+# uploads/

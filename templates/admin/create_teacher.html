@@ -1,31 +1,41 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Add New Teacher</h2>
+<h2>{{ 'Edit Teacher' if teacher else 'Add New Teacher' }}</h2>
 <div class="card shadow mt-3" style="max-width:500px">
   <div class="card-body p-4">
     <form method="POST">
       <div class="mb-3">
         <label class="form-label">Full Name</label>
-        <input type="text" name="full_name" class="form-control" required>
+        <input type="text" name="full_name" class="form-control" value="{{ teacher.full_name if teacher else '' }}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Department</label>
+        <select name="department" class="form-control" required>
+          <option value="" disabled {{ 'selected' if not teacher or not teacher.department }}>Select Department</option>
+          <option value="DS" {{ 'selected' if teacher and teacher.department == 'DS' }}>DS</option>
+          <option value="AIML" {{ 'selected' if teacher and teacher.department == 'AIML' }}>AIML</option>
+          <option value="CSE" {{ 'selected' if teacher and teacher.department == 'CSE' }}>CSE</option>
+        </select>
       </div>
       <div class="mb-3">
         <label class="form-label">Username</label>
-        <input type="text" name="username" class="form-control" required>
+        <input type="text" name="username" class="form-control" value="{{ teacher.username if teacher else '' }}" {{ 'disabled' if teacher else 'required' }}>
       </div>
       <div class="mb-3">
         <label class="form-label">Password</label>
-        <input type="password" name="password" class="form-control" required>
+        <input type="password" name="password" class="form-control" {% if not teacher %}required{% endif %} placeholder="{{ 'Leave blank to keep current' if teacher else 'Password' }}">
       </div>
       <div class="mb-3">
         <label class="form-label">Assign Subjects</label>
         {% for subject in subjects %}
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="subjects" value="{{ subject.id }}">
+          <input class="form-check-input" type="checkbox" name="subjects" value="{{ subject.id }}" 
+                 {% if teacher and subject in teacher.subjects %}checked{% endif %}>
           <label class="form-check-label">{{ subject.name }} ({{ subject.code }})</label>
         </div>
         {% endfor %}
       </div>
-      <button type="submit" class="btn btn-success w-100">Create Teacher</button>
+      <button type="submit" class="btn btn-{{ 'warning' if teacher else 'success' }} w-100">{{ 'Update Record' if teacher else 'Create Teacher' }}</button>
     </form>
   </div>
 </div>

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, session
 from werkzeug.security import generate_password_hash
-from models import db, User, Subject, Paper, PaperQuestion, Question
+from models import db, User, Subject, Paper, PaperQuestion, Question, UploadedFile
 from routes.auth import admin_required
 from utils.pdf_generator import generate_pdf
 from utils.docx_generator import generate_docx
@@ -29,6 +29,8 @@ def create_teacher():
         full_name = request.form.get('full_name', '').strip()
         subject_ids = request.form.getlist('subjects')  # list of subject ids
 
+        department = request.form.get('department')
+        
         if User.query.filter_by(username=username).first():
             flash('Username already exists.')
             return render_template('admin/create_teacher.html', subjects=subjects)
@@ -37,7 +39,8 @@ def create_teacher():
             username=username,
             password_hash=generate_password_hash(password),
             full_name=full_name,
-            role='teacher'
+            role='teacher',
+            department=department
         )
         for sid in subject_ids:
             subject = Subject.query.get(int(sid))
@@ -60,6 +63,7 @@ def edit_teacher(teacher_id):
 
     if request.method == 'POST':
         teacher.full_name = request.form.get('full_name', '').strip()
+        teacher.department = request.form.get('department')
         new_password = request.form.get('password', '')
         if new_password:
             teacher.password_hash = generate_password_hash(new_password)
@@ -76,6 +80,25 @@ def edit_teacher(teacher_id):
         return redirect(url_for('admin.dashboard'))
 
     return render_template('admin/create_teacher.html', teacher=teacher, subjects=subjects)
+
+@admin_bp.route('/delete-teacher/<int:teacher_id>')
+@admin_required
+def delete_teacher(teacher_id):
+    teacher = User.query.get_or_404(teacher_id)
+    if teacher.role != 'teacher':
+        flash('Cannot delete this user.')
+        return redirect(url_for('admin.dashboard'))
+        
+    papers = Paper.query.filter_by(teacher_id=teacher.id).all()
+    for paper in papers:
+        PaperQuestion.query.filter_by(paper_id=paper.id).delete()
+        UploadedFile.query.filter_by(paper_id=paper.id).delete()
+        db.session.delete(paper)
+        
+    db.session.delete(teacher)
+    db.session.commit()
+    flash('Teacher and all associated papers deleted successfully.')
+    return redirect(url_for('admin.dashboard'))
 
 
 @admin_bp.route('/papers')
@@ -109,3 +132,14 @@ def download_paper(paper_id):
                          as_attachment=True,
                          download_name=f"{paper.title}.pdf",
                          mimetype='application/pdf')
+
+@admin_bp.route('/delete-paper/<int:paper_id>')
+@admin_required
+def delete_paper(paper_id):
+    paper = Paper.query.get_or_404(paper_id)
+    PaperQuestion.query.filter_by(paper_id=paper.id).delete()
+    UploadedFile.query.filter_by(paper_id=paper.id).delete()
+    db.session.delete(paper)
+    db.session.commit()
+    flash('Paper deleted successfully.')
+    return redirect(url_for('admin.view_papers'))

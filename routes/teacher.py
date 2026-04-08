@@ -67,13 +67,14 @@ def delete_question(q_id):
 def create_paper():
     title = request.form.get('title', '').strip()
     subject_id = int(request.form.get('subject_id'))
+    exam_type = request.form.get('exam_type', 'class_test')
     user_id = session['user_id']
 
     if not title:
         flash('Paper title is required.')
         return redirect(url_for('teacher.dashboard'))
 
-    paper = Paper(title=title, subject_id=subject_id, teacher_id=user_id)
+    paper = Paper(title=title, subject_id=subject_id, teacher_id=user_id, exam_type=exam_type)
     db.session.add(paper)
     db.session.commit()
 
@@ -94,12 +95,64 @@ def paper_builder(paper_id):
     if request.method == 'POST':
         title = request.form.get('title')
         subject_id = request.form.get('subject_id')
+        exam_type = request.form.get('exam_type')
         if title and subject_id:
             paper.title = title
             paper.subject_id = int(subject_id)
+            if exam_type:
+                paper.exam_type = exam_type
+            
+            exam_date = request.form.get('exam_date')
+            if exam_date is not None:
+                paper.exam_date = exam_date
+            
+            semester = request.form.get('semester')
+            if semester is not None:
+                paper.semester = semester
+                
+            header_title = request.form.get('header_title')
+            if header_title is not None:
+                paper.header_title = header_title
+                
+            branch = request.form.get('branch')
+            if branch is not None:
+                paper.branch = branch
+            
+            # Save question texts directly from the template
+            for pq in paper.questions:
+                q_text = request.form.get(f'question_text_{pq.id}')
+                if q_text is not None:
+                    pq.question.question_text = q_text
+                if pq.question.q_type == 'mcq':
+                    pq.question.opt_a = request.form.get(f'opt_a_{pq.id}')
+                    pq.question.opt_b = request.form.get(f'opt_b_{pq.id}')
+                    pq.question.opt_c = request.form.get(f'opt_c_{pq.id}')
+                    pq.question.opt_d = request.form.get(f'opt_d_{pq.id}')
+            
             db.session.commit()
-            flash('Paper details saved.')
+            flash('Paper details and questions saved.')
         return redirect(url_for('teacher.paper_builder', paper_id=paper.id))
+
+    # Auto-generate or pad fixed template layout based on exam type
+    target_count = 25 if paper.exam_type == 'university' else 10
+    current_count = len(paper.questions)
+    
+    if current_count < target_count:
+        if paper.exam_type == 'university':
+            # 12 MCQs + 2(Q2) + 2(Q3) + 3(Q4) + 3(Q5) + 3(Q6) = 25
+            marks_layout = [1]*12 + [6]*13
+            types_layout = ['mcq']*12 + ['long']*13
+        else:
+            marks_layout = [1, 1, 1, 1, 1, 5, 5, 5, 5, 5]
+            types_layout = ['mcq', 'mcq', 'mcq', 'mcq', 'mcq', 'long', 'long', 'long', 'long', 'long']
+            
+        for i in range(current_count, target_count):
+            q = Question(question_text='', marks=marks_layout[i], q_type=types_layout[i], subject_id=paper.subject_id)
+            db.session.add(q)
+            db.session.flush()
+            pq = PaperQuestion(paper_id=paper.id, question_id=q.id, order_num=i)
+            db.session.add(pq)
+        db.session.commit()
 
     subject_ids = [s.id for s in user.subjects]
     all_questions = Question.query.filter(Question.subject_id.in_(subject_ids)).all()
@@ -210,4 +263,23 @@ def submit_paper(paper_id):
     paper.status = 'submitted'
     db.session.commit()
     flash('Paper submitted to HOD.')
+    return redirect(url_for('teacher.dashboard'))
+
+
+# ---------------- DELETE PAPER ----------------
+@teacher_bp.route('/paper/<int:paper_id>/delete')
+@teacher_required
+def delete_paper(paper_id):
+    paper = Paper.query.get_or_404(paper_id)
+    user = User.query.get(session['user_id'])
+    
+    if paper.teacher_id != user.id:
+        flash('Access denied.')
+        return redirect(url_for('teacher.dashboard'))
+
+    PaperQuestion.query.filter_by(paper_id=paper.id).delete()
+    UploadedFile.query.filter_by(paper_id=paper.id).delete()
+    db.session.delete(paper)
+    db.session.commit()
+    flash('Paper deleted successfully.')
     return redirect(url_for('teacher.dashboard'))

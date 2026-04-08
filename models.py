@@ -11,6 +11,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     full_name = db.Column(db.String(120), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='teacher')
+    department = db.Column(db.String(50), nullable=True)
 
     subjects = db.relationship('Subject', secondary='user_subjects', backref='users')
     papers = db.relationship('Paper', backref='teacher', lazy=True)
@@ -39,6 +40,10 @@ class Question(db.Model):
     question_text = db.Column(db.Text, nullable=False)
     marks = db.Column(db.Integer, nullable=False, default=1)
     q_type = db.Column(db.String(20), nullable=False, default='short')
+    opt_a = db.Column(db.String(200), nullable=True)
+    opt_b = db.Column(db.String(200), nullable=True)
+    opt_c = db.Column(db.String(200), nullable=True)
+    opt_d = db.Column(db.String(200), nullable=True)
 
 
 class Paper(db.Model):
@@ -48,6 +53,11 @@ class Paper(db.Model):
     subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'), nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='draft')
+    exam_type = db.Column(db.String(50), nullable=False, default='class_test')
+    exam_date = db.Column(db.String(20), nullable=True)
+    semester = db.Column(db.String(20), nullable=True)
+    header_title = db.Column(db.String(100), nullable=True)
+    branch = db.Column(db.String(150), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     questions = db.relationship('PaperQuestion', backref='paper', lazy=True, order_by='PaperQuestion.order_num')
@@ -88,10 +98,16 @@ def init_db(app):
 
         if Subject.query.count() == 0:
             subjects = [
-                Subject(name='Mathematics', code='MATH101'),
-                Subject(name='Physics', code='PHY101'),
-                Subject(name='Chemistry', code='CHEM101'),
-                Subject(name='Computer Science', code='CS101'),
+                Subject(name='Computer Network and Cloud Computing', code='BTAIC501'),
+                Subject(name='Machine Learning', code='BTAIC502'),
+                Subject(name='2. Business Communication', code='BTAIHM503B'),
+                Subject(name='1. Advanced Database System', code='BTAIPE504A'),
+                Subject(name='3. Software Engineering and Testing', code='BTAIOE505C'),
+                Subject(name='Deep Learning', code='BTAIC601'),
+                Subject(name='Advanced Machine Learning', code='BTAIC602'),
+                Subject(name='4. Web Development', code='BTAIPE603D'),
+                Subject(name='1. Big Data Analytics', code='BTAIOE604A'),
+                Subject(name='1. Development Engineering', code='BTAIHM605A'),
             ]
             db.session.add_all(subjects)
 
